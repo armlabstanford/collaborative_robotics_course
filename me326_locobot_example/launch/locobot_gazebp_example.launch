@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+<launch>
+
+<!-- Launch the interbotix gazebo robot-->
+  <!-- Define arguments for the included launch file -->
+  <arg name="show_lidar" default="true" />
+  <arg name="use_trajectory_controllers" default="true" />
+  <arg name="robot_model" default="locobot_wx250s" />
+
+  <!-- Include the contents of another launch file -->
+  <include file="$(find interbotix_xslocobot_gazebo)/launch/xslocobot_gazebo.launch">
+    <arg name="show_lidar" value="$(arg show_lidar)" />
+    <arg name="use_trajectory_controllers" value="$(arg use_trajectory_controllers)" />
+    <arg name="robot_model" value="$(arg robot_model)" />
+  </include>
+
+
+<!-- Unpause Gazebo physics -->
+<!-- <shell command="sleep 10"/>
+  <node name="unpause_gazebo" pkg="rosservice" type="rosservice" args="call /gazebo/unpause_physics" />
+ -->
+<!-- <exec command="bash" args="-c 'sleep 10; rosservice call /gazebo/unpause_physics'" /> -->
+
+
+
+</launch>
+
+
