@@ -317,6 +317,54 @@ In the above block of code we calculate the error with a proportional gain, and 
 
 Once this control input is calculated, it is published and the robot moves. Once we get close enough to points A or B, the goal switches to the other point for continuous motion.
 
+```
+
+    def go_to_pose(self,target_pose=None):
+        """
+        Input: Target_pose - ROS geometry_msgs.msg.Pose type
+        To see what it looks like, put the following in the terminal: $ rosmsg show geometry_msgs/Pose
+        """
+        
+        #Step 1: Obtain or specify the goal pose (in sim, its between locobot/odom (world) and locobot/base_link (mobile base))
+        if type(target_pose) == type(None):
+            target_pose = Pose()
+            target_pose.position.x = 1.0
+            target_pose.position.y = 0.0
+            #specify the desired pose to be the same orientation as the origin
+            target_pose.orientation.x = 0
+            target_pose.orientation.y = 0
+            target_pose.orientation.z = 0
+            target_pose.orientation.w = 1 # cos(theta/2)
+            self.target_pose = target_pose
+        elif type(target_pose) != type(Pose()):
+            rospy.logerr("Incorrect type for target pose, expects geometry_msgs Pose type") #send error msg if wrong type is send to go_to_pose
+        else:
+            self.target_pose = target_pose
+
+        #Step 2: Subscribe to pose of the base, and use 'Point P control' (point right in front of the non-holonomic base's line) to move to the position, then orient to the target orinetation once the position is reached
+
+        rospy.Subscriber("/locobot/mobile_base/odom", Odometry, self.mobile_base_callback) #this says: listen to the odom message, of type odometry, and send that to the callback function specified
+        rospy.spin() #This is ros python's way of 'always listening' for the subscriber messages, and when it 
+```
+This is the last function of the class: `go_to_pose`, it is what the main function calls. Note that after the target was specified, we then subscribed to the odomometry (state) of the mobile base. The `rospy.spin()` tells ros python to keep listening for subscribed topics and whenever anything is 'heard' then use the callback with that information (so no while-loops required).
+
+```
+
+def main():
+    rospy.init_node('locobot_back_and_forth')
+    cls_obj = LocobotExample() #instantiate object of the class (to call and use the functions)
+    cls_obj.go_to_pose()
+
+
+
+if __name__ == '__main__':
+    #this is where the script begins, calls the main function
+    main()
+
+```
+These functions are at the bottom of the script, but in the flow of the code they come first. The `if __name__ == '__main__'` is used to call the main function, the contents of main could have been placed here as well, python searches for this function to start. The `main()` function initiates a ros node, instantiates and object of the class, then triggers the code by calling the function `go_to_pose` which will then subscribe and spin until the node is terminated.
+
+
 ## Spawning Blocks and Visualizing Robots Perspective
 To spawn blocks, once the above is setup, you can use the following script as a reference: 
 ```
