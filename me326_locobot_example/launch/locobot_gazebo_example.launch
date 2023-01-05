@@ -7,6 +7,8 @@
   <arg name="use_trajectory_controllers" default="true" />
   <arg name="robot_model" default="locobot_wx250s" />
 
+  <arg name="run_point_A_B_demo" default="true" />
+
   <!-- Include the contents of another launch file -->
   <include file="$(find interbotix_xslocobot_gazebo)/launch/xslocobot_gazebo.launch">
     <arg name="show_lidar" value="$(arg show_lidar)" />
@@ -15,13 +17,14 @@
   </include>
 
 
-<!-- Unpause Gazebo physics -->
-<!-- <shell command="sleep 10"/>
-  <node name="unpause_gazebo" pkg="rosservice" type="rosservice" args="call /gazebo/unpause_physics" />
- -->
-<!-- <exec command="bash" args="-c 'sleep 10; rosservice call /gazebo/unpause_physics'" /> -->
+  <!-- run the saved rviz environment -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find me326_locobot_example)/rviz/rviz_example_env.rviz" />
 
 
+  <!-- Now run the node for going from point A to B -->
+<group if="$(eval arg('run_point_A_B_demo') == 'true')">
+  <node type="locobot_example_motion.py" name="locobot_example_motion" pkg="me326_locobot_example" respawn="true" />
+</group>
 
 </launch>
 
