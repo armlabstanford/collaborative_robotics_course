@@ -375,5 +375,5 @@ $ roslaunch me326_locobot_example spawn_cube.launch
 this drops four blocks of primary colors into the gazebo world. You can make more blocks by spawning more of these in the launch file (careful of the naming and indexing).
 
 ## Final Group Project 
-In the final project, teams of students will have their robots work as a team with other robots where no explicit (digital) communication is allowed in a resource gathering task
+In the final project, teams of students will have their robots work as a team with robots programmed by other teams and where no explicit (digital) communication is allowed in a resource gathering task
 ![](https://arm.stanford.edu/sites/g/files/sbiybj21131/files/styles/card_1900x950/public/media/image/project_description_0.png?h=4e76c794&itok=-nFm2IOu)
