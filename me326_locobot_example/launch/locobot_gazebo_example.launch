@@ -22,7 +22,7 @@
 
 
   <!-- Now run the node for going from point A to B -->
-<group if="$(eval arg('run_point_A_B_demo') == 'true')">
+<group if="$(arg run_point_A_B_demo)">
   <node type="locobot_example_motion.py" name="locobot_example_motion" pkg="me326_locobot_example" respawn="true" />
 </group>
 
