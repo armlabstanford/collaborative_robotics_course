@@ -40,6 +40,9 @@ $ sudo apt-get update
 $ sudo apt-get install python3-catkin-tools
 ```
 refer to this link for the [quickstart](https://catkin-tools.readthedocs.io/en/latest/quick_start.html) and the [cheat sheet](https://catkin-tools.readthedocs.io/en/latest/cheat_sheet.html): https://catkin-tools.readthedocs.io/en/latest/index.html 
+
+- Become familiar with Github [github tutorials](https://docs.github.com/en/get-started/quickstart/hello-world), (learn with bitbucket tutorial, same methods, great graphics: [bitbucket tutorial](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud))
+
 ## Locobot Installation
 On this page, follow these [instructions from Trossen Robotics](https://docs.trossenrobotics.com/interbotix_xslocobots_docs/ros_interface/ros1/software_setup.html) under "Remote Install"
 
