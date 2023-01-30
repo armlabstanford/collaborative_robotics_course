@@ -42,16 +42,20 @@ class BoxPickExample(object):
 
 class OrientCamera(object):
 	"""docstring for OrientCamera"""
-	def __init__(self, tilt_topic = "/locobot/tilt_controller/command"):		
-		# rostopic pub /locobot/tilt_controller/command std_msgs/Float64 "data: 0.0"
+	def __init__(self, tilt_topic = "/locobot/tilt_controller/command", pan_topic = "/locobot/pan_controller/command"):		
 		self.orient_pub = rospy.Publisher(tilt_topic, Float64, queue_size=1, latch=True)
+		self.pan_pub = rospy.Publisher(pan_topic, Float64, queue_size=1, latch=True)
 
-	def tilt_camera_to_see_blocks(self,angle=0.5):
+	def tilt_camera(self,angle=0.5):
 		msg = Float64()
 		msg.data = angle
 		self.orient_pub.publish(msg)
-		print("cause orientation, msg: ", msg)
+		# print("cause orientation, msg: ", msg)
 
+	def pan_camera(self,angle=0.5):
+		msg = Float64()
+		msg.data = angle
+		self.pan_pub.publish(msg)
 
 
 class DepthToPointCloud:
@@ -212,16 +216,19 @@ def main():
 
 	# Point the camera toward the blocks
 	camera_orient_obj = OrientCamera()
-	camera_orient_obj.tilt_camera_to_see_blocks()
+	camera_orient_obj.tilt_camera()
 
 
 
+	rospy.spin()
 
-	orient_pub = rospy.Publisher("/locobot/tilt_controller/command", Float64, queue_size=1, latch=True)
-	msg = Float64()
-	msg.data = 0.5
-	orient_pub.publish(msg)
-	print("cause orientation, msg: ", msg)
+	# orient_pub = rospy.Publisher("/locobot/tilt_controller/command", Float64, queue_size=1, latch=True)
+	# msg = Float64()
+	# msg.data = 0.5
+	# orient_pub.publish(msg)
+	# print("cause orientation, msg: ", msg)
+
+	
 
 	#camera encoding: 32FC1
 	#color image topic: /locobot/camera/color/image_raw type: sensor_msgs/Image, size hxw = 480x640 
