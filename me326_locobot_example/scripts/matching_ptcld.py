@@ -11,6 +11,8 @@ from sensor_msgs.msg import Image, CameraInfo
 from geometry_msgs.msg import PointStamped
 from visualization_msgs.msg import Marker
 
+import threading
+
 class PixelCloudMatcher:
     def __init__(self, color_image_topic = "/locobot/camera/color/image_raw", depth_image_topic ="/locobot/camera/aligned_depth_to_color/image_raw", depth_img_camera_info="/locobot/camera/aligned_depth_to_color/camera_info"):
         # subscribe to depth image and camera info topics
@@ -31,11 +33,17 @@ class PixelCloudMatcher:
 
         self.camera_cube_locator_marker = rospy.Publisher("/locobot/camera_cube_locator",Marker, queue_size=1)
 
+        self.point_3d_cloud = PointStamped()
+
+        self.thread_lock = threading.Lock() #threading # self.thread_lock.acquire() # self.thread_lock.release()
+
 
     def camera_cube_locator_marker_gen(self):
         #this is very simple because we are just putting the point P in the base_link frame (it is static in this frame)
         marker = Marker()
-        marker.header.frame_id = "locobot/camera_depth_link"
+        self.thread_lock.acquire()
+        marker.header.frame_id = self.point_3d_cloud.header.frame_id #"locobot/camera_depth_link"
+        self.thread_lock.release()
         marker.header.stamp = rospy.Time.now()
         marker.id = 0
         marker.type = Marker.SPHERE
@@ -45,10 +53,11 @@ class PixelCloudMatcher:
         marker.scale.z = 0.1
 
         # Set the marker pose
+        self.thread_lock.acquire()
         marker.pose.position.x = self.point_3d_cloud.point.x
         marker.pose.position.y = self.point_3d_cloud.point.y
         marker.pose.position.z = self.point_3d_cloud.point.z
-
+        self.thread_lock.release()
         # Set the marker color
         marker.color.a = 1.0 #transparency
         marker.color.r = 1.0 #red
@@ -69,7 +78,7 @@ class PixelCloudMatcher:
         #Step 2: prep the mask
         mask = cv2.inRange(hsv, lower_bound, upper_bound)
 
-        print("mask: ", mask)
+        # print("mask: ", mask)
         index_cube = [[u,v] for u in range(mask.shape[0]) for v in range(mask.shape[1]) if mask[u,v]>0 ]
 
         '''
@@ -77,14 +86,17 @@ class PixelCloudMatcher:
         only one cube of the desired color in the field of view. 
         We then find the center of the singular cube
         '''
-        center_cube_index = np.floor(len(index_cube)/2)
-        self.uv_pix = index_cube[int(center_cube_index)]
-
-        print("indx cube", index_cube)
+        center_cube_index = np.floor(np.mean(index_cube,0))
+        self.thread_lock.acquire()
+        self.uv_pix =[int(center_cube_index[0]),int(center_cube_index[1])]
+        self.thread_lock.release()
+        # print("/n /n indx cube", index_cube)
 
         #Step 3: Apply the mask; black region in the mask is 0, so when multiplied with original image removes all non-selected color 
         mask_img = cv2.bitwise_and(color_img, color_img, mask = mask)
         
+
+        mask_img[int(center_cube_index[0]),int(center_cube_index[1])] = 100
         self.image_color_filt_pub.publish(self.bridge.cv2_to_imgmsg(mask_img, "rgb8"))
 
         self.camera_cube_locator_marker_gen()
@@ -104,19 +116,23 @@ class PixelCloudMatcher:
         # loop through all pixels in the image
         # for y in range(depth_msg.height):
         #     for x in range(depth_msg.width):
-
+        self.thread_lock.acquire()
         x = self.uv_pix[0]
         y = self.uv_pix[1]
+        self.thread_lock.release()
 
         # get the depth value for the current pixel
-        depth = depth_image[y, x]
+
+        # depth = depth_image[y, x] #was original from example
+        depth = depth_image[x, y]
 
         # skip pixels with no depth
         if depth == 0:
             pass
         else:
             # use the camera model to get the 3D ray for the current pixel
-            ray = self.camera_model.projectPixelTo3dRay((x, y))
+            # ray = self.camera_model.projectPixelTo3dRay((x, y))
+            ray = self.camera_model.projectPixelTo3dRay((y, x))
 
             # calculate the 3D point on the ray using the depth value
             # print("ray ",ray," depth ",depth, "\n type of ray:",type(ray[0]), " type of depth",type(depth))
@@ -132,8 +148,9 @@ class PixelCloudMatcher:
             # transform the point to the pointcloud frame using tf
             point_cloud_frame = self.camera_model.tfFrame()
             # print("point cloud frame: ", point_cloud_frame)
+            self.thread_lock.acquire()
             self.point_3d_cloud = self.listener.transformPoint(point_cloud_frame, point_3d_geom_msg)
-
+            self.thread_lock.release()
             # do something with the point in the pointcloud frame
             rospy.loginfo("Matched pixel (%d, %d) to point in pointcloud frame: %s", x, y, self.point_3d_cloud)
 
