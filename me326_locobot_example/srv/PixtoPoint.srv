@@ -1,0 +1,3 @@
+string rgb_img_topic
+---
+geometry_msgs/PointStamped ptCld_point
