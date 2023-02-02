@@ -23,8 +23,17 @@
 #include<std_msgs/Header.h>
 #define PI 3.14159265
 
+
+#include <opencv2/opencv.hpp>
+#include <ros/ros.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+
+
 //include the service
 #include <me326_locobot_example/PixtoPoint.h>
+
+
 
 
 class Matching_Pix_to_Ptcld
