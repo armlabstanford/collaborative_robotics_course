@@ -41,6 +41,8 @@ $ sudo apt-get install python3-catkin-tools
 ```
 refer to this link for the [quickstart](https://catkin-tools.readthedocs.io/en/latest/quick_start.html) and the [cheat sheet](https://catkin-tools.readthedocs.io/en/latest/cheat_sheet.html): https://catkin-tools.readthedocs.io/en/latest/index.html 
 
+
+- To make file management easier for the package.xml and CMakeLists, this tutorial leverages the [helper code "catkin simple"](https://github.com/catkin/catkin_simple) when you make your package below you will import it into your workspace with `git clone https://github.com/catkin/catkin_simple.git`
 - Become familiar with Github [github tutorials](https://docs.github.com/en/get-started/quickstart/hello-world), (learn with bitbucket tutorial, same methods, great graphics: [bitbucket tutorial](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud))
 
 ## Locobot Installation
@@ -66,6 +68,7 @@ $ cd ~/me326_ws/
 $ catkin init
 $ cd ~/me326_ws/src/
 $ git clone https://github.com/armlabstanford/collaborative_robotics_course.git
+$ git clone https://github.com/catkin/catkin_simple.git
 $ catkin build -cs
 ```
 (this last line `$ catkin build -cs` tells the system to build the workspace, if there are other packages (in the future), continue if any fail then summarize. If you want to build a particular package (name pkg) you can also say `$catkin build pkg`, and if you are in the package directory `$catkin build this` which can be abreviated to `$ catkin bt`.

@@ -4,4 +4,8 @@ gnome-terminal -x roslaunch interbotix_xslocobot_moveit xslocobot_moveit.launch 
 sleep 10
 rosservice call /gazebo/unpause_physics
 
+sleep 5
+roslaunch me326_locobot_example spawn_cube.launch
+gnome-terminal -x roslaunch me326_locobot_example gazebo_moveit_example.launch 
+
 
