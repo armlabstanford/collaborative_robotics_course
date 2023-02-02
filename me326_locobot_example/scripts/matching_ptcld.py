@@ -22,8 +22,12 @@ class PixelCloudMatcher:
         self.bridge = CvBridge()
         self.depth_image_topic = depth_image_topic
         self.depth_img_camera_info = depth_img_camera_info
+        
+        self.thread_lock = threading.Lock() #threading # self.thread_lock.acquire() # self.thread_lock.release()
 
-        self.image_color_filt_pub = rospy.Publisher("/locobot/camera/block_color_filt_img",Image,queue_size=1)
+        
+
+        self.image_color_filt_pub = rospy.Publisher("/locobot/camera/block_color_filt_img",Image,queue_size=1,latch=True)
 
         # create a tf listener
         self.listener = tf.TransformListener()
@@ -37,9 +41,12 @@ class PixelCloudMatcher:
         self.point_3d_cloud = PointStamped()
 
         self.point_3d_cloud_setbool = False #boolean to check if its been properly set
-        self.thread_lock = threading.Lock() #threading # self.thread_lock.acquire() # self.thread_lock.release()
-
-
+       
+        self.info_sub = rospy.Subscriber(self.depth_img_camera_info, CameraInfo, self.info_callback)
+        
+        self.depth_sub = rospy.Subscriber(self.depth_image_topic, Image, self.depth_callback)
+        self.image_sub = rospy.Subscriber(self.color_image_topic, Image, self.color_image_callback)
+     
 
     def camera_cube_locator_marker_gen(self):
         #this is very simple because we are just putting the point P in the base_link frame (it is static in this frame)
@@ -151,13 +158,9 @@ class PixelCloudMatcher:
         #this function takes in a requested topic for the image, and returns pixel point
         self.color_image_topic = req.rgb_img_topic
         #now call the other subscribers
-        self.depth_sub = rospy.Subscriber(self.depth_image_topic, Image, self.depth_callback)
-        self.info_sub = rospy.Subscriber(self.depth_img_camera_info, CameraInfo, self.info_callback)
-        self.image_sub = rospy.Subscriber(self.color_image_topic, Image, self.color_image_callback)
         resp = PixtoPointResponse()
-        if self.point_3d_cloud_setbool: 
-            resp.ptCld_point = self.point_3d_cloud
-            return resp
+        resp.ptCld_point = self.point_3d_cloud
+        return resp
 
 if __name__ == "__main__":
     rospy.init_node("pixel_cloud_matcher_service")
