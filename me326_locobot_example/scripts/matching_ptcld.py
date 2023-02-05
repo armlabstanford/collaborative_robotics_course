@@ -39,8 +39,6 @@ class PixelCloudMatcher:
         self.camera_cube_locator_marker = rospy.Publisher("/locobot/camera_cube_locator",Marker, queue_size=1)
 
         self.point_3d_cloud = PointStamped()
-
-        self.point_3d_cloud_setbool = False #boolean to check if its been properly set
        
         self.info_sub = rospy.Subscriber(self.depth_img_camera_info, CameraInfo, self.info_callback)
         
@@ -143,7 +141,6 @@ class PixelCloudMatcher:
             point_cloud_frame = self.camera_model.tfFrame()
             self.thread_lock.acquire()
             self.point_3d_cloud = self.listener.transformPoint(point_cloud_frame, point_3d_geom_msg)
-            self.point_3d_cloud_setbool = True
             self.thread_lock.release()
 
             # do something with the point in the pointcloud frame
