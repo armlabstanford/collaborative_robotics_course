@@ -16,25 +16,21 @@ from me326_locobot_example.srv import PixtoPoint, PixtoPointResponse
 
 
 class PixelCloudMatcher:
-    def __init__(self, color_image_topic = "/locobot/camera/color/image_raw", depth_image_topic ="/locobot/camera/aligned_depth_to_color/image_raw", depth_img_camera_info="/locobot/camera/aligned_depth_to_color/camera_info"):
-        # subscribe to depth image and camera info topics
-
+    def __init__(self):
         self.bridge = CvBridge()
-        self.depth_image_topic = depth_image_topic
-        self.depth_img_camera_info = depth_img_camera_info
-        
         self.thread_lock = threading.Lock() #threading # self.thread_lock.acquire() # self.thread_lock.release()
 
-        
-
+        #Set the image topics from param server: http://wiki.ros.org/rospy/Overview/Parameter%20Server 
+        self.color_image_topic  = rospy.get_param('pt_srv_color_img_topic', '/locobot/camera/color/image_raw')
+        self.depth_image_topic = rospy.get_param('pt_srv_depth_img_topic', '/locobot/camera/aligned_depth_to_color/image_raw')
+        self.depth_img_camera_info = rospy.get_param('pt_srv_depth_img_cam_info_topic', '/locobot/camera/aligned_depth_to_color/camera_info')
+    
         self.image_color_filt_pub = rospy.Publisher("/locobot/camera/block_color_filt_img",Image,queue_size=1,latch=True)
 
         # create a tf listener
         self.listener = tf.TransformListener()
 
         self.uv_pix = [0,0] #find the pixel index
-
-        self.color_image_topic = color_image_topic #this is over-written by the service request
 
         self.camera_cube_locator_marker = rospy.Publisher("/locobot/camera_cube_locator",Marker, queue_size=1)
 
@@ -153,7 +149,6 @@ class PixelCloudMatcher:
 
     def service_callback(self,req):
         #this function takes in a requested topic for the image, and returns pixel point
-        self.color_image_topic = req.rgb_img_topic
         #now call the other subscribers
         resp = PixtoPointResponse()
         resp.ptCld_point = self.point_3d_cloud
