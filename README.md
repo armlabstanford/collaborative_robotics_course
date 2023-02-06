@@ -380,6 +380,32 @@ $ roslaunch me326_locobot_example spawn_cube.launch
 ```
 this drops four blocks of primary colors into the gazebo world. You can make more blocks by spawning more of these in the launch file (careful of the naming and indexing).
 
+## Running Code to Visualize Single Block in Field of View
+The following block of code allows you to run moveit, spawn the blocks, moves the arm down and adjusts the camera to see the blocks. Then, we use a service to visualize the block (red block in this example) and find the corresponding point in the point cloud: 
+
+#### Step 1: Run the base environment and launch the python service to match pixel to point cloud
+First go to the class folder `$ roscd me326_locobot_example/launch/` then type: 
+```
+$ ./launch_locobot_gazebo_moveit.sh
+```
+this takes several seconds to load. In a separate terminal you are encouraged to open either `$ rosrun rqt_image_view rqt_image_view` (for single image inspection), or run `$ rqt`, then in the top menu select 'Plugins', then 'Visualization', then 'Image view' (do this twice). Then once you run the code below you will want to subscribe to the topics '/locobot/camera/color/image_raw' and '/locobot/camera/block_color_filt_img' in these windows.
+
+#### Step 2: Run the (python) service to find the pointcloud
+Run the service by doing the following in a new terminal: 
+```
+rosrun me326_locobot_example matching_ptcld.py 
+```
+This initiates the service, now you can call the service: `$ rosservice call /pix_to_point "{}"` in a new terminal. Be sure to observe the image '/locobot/camera/block_color_filt_img' through one of the *rqt* viewing options.
+
+Note, this is *very very slow (10sec)*, we are working on a C++ implementation of this example service that should be a lot faster. But if you use the python implementation, you will have to pause for about 10sec for it to perform an update on the masking of the image on an ordinary laptop.
+
+#### Step 3: Visualize in RViz
+Open the RViz window and hit the *Add* button above the Motion Planning section, this will then give you the option to *create a visualization* either 'By display type' or 'By topic'. Choose under 'By topic', then you will want to repeat this process twice for the following two topics: 
+- /locobot : /camera : /depth_registered : /Points : PointCloud2
+- /camera_cube_locator : Marker
+
+With these enabled, you can then navigate RViz to see the depth point cloud in 3D (note the cube colors are incorrect with this cloud - refer to gazebo and the camera image for correct color), and the marker is *close* to the desired point. To see the utility of this method further, you can pan the camera back and forth with the terminal input `rostopic pub /locobot/pan_controller/command std_msgs/Float64 "data: 0.5"` and `rostopic pub /locobot/pan_controller/command std_msgs/Float64 "data: 0.0"` (you will notice the significant delay for the python version of this serivce in '/locobot/camera/block_color_filt_img').
+
 ## Final Group Project 
 In the final project, teams of students will have their robots work as a team with robots programmed by other teams and where no explicit (digital) communication is allowed in a resource gathering task
 ![](https://arm.stanford.edu/sites/g/files/sbiybj21131/files/styles/card_1900x950/public/media/image/project_description_0.png?h=4e76c794&itok=-nFm2IOu)
