@@ -54,6 +54,13 @@
 
 
 
+#include <sensor_msgs/PointCloud2.h>
+// #include <pcl_conversions/pcl_conversions.h>
+// #include <pcl/point_types.h>
+// #include <pcl/PCLPointCloud2.h>
+// #include <pcl_ros/point_cloud.h>
+
+
 class Matching_Pix_to_Ptcld
 {
 public:
@@ -66,6 +73,9 @@ public:
 	bool service_callback(me326_locobot_example::PixtoPoint::Request &req, me326_locobot_example::PixtoPoint::Response &res);
 	void camera_cube_locator_marker_gen();
 
+	// void cloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg);
+
+
   private:
 	ros::NodeHandle nh;
 
@@ -77,6 +87,8 @@ public:
 	ros::Subscriber depth_sub_;
 	ros::Subscriber rgb_image_sub_;
 
+	ros::Subscriber cloud_sub_; 
+
 	// Rosservice
 	ros::ServiceServer service_;
 
@@ -86,7 +98,14 @@ public:
 	std::string color_image_topic_; // this string is over-written by the service request
 	std::string depth_image_topic_; // this string is over-written by the service request
 	std::string depth_img_camera_info_; // this string is over-written by the service request
+	std::string registered_pt_cld_topic_; // this string is over-written by the service request
+	
 	image_geometry::PinholeCameraModel camera_model_;
+
+	// sensor_msgs::PointCloud2ConstPtr cloud_msg_; // for registered depth cloud ray tracing to point in cloud
+
+
+	bool depth_cam_info_ready_;
 
 	// TF Listener
 	tf2_ros::Buffer tf_buffer_;
@@ -98,7 +117,7 @@ public:
 Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld() 
 {
 	//Class constructor
-	nh = ros::NodeHandle("~"); //This argument makes all topics internal to this node namespace
+	nh = ros::NodeHandle(); //This argument makes all topics internal to this node namespace. //takes the node name (global node handle), If you use ~ then its private (under the node handle name) /armcontroller/ *param*
 
 	//this is how to setup the TF buffer in a class:
 	tf_listener_.reset(new tf2_ros::TransformListener(tf_buffer_));
@@ -108,14 +127,20 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
 	nh.param<std::string>("pt_srv_depth_img_topic", depth_image_topic_, "/locobot/camera/aligned_depth_to_color/image_raw");
 	nh.param<std::string>("pt_srv_depth_img_cam_info_topic", depth_img_camera_info_, "/locobot/camera/aligned_depth_to_color/camera_info");
 
-  // Publisher declarations
-	ros::Publisher image_color_filt_pub_ = nh.advertise<sensor_msgs::Image>("/locobot/camera/block_color_filt_img",1);
-	ros::Publisher camera_cube_locator_marker_ = nh.advertise<visualization_msgs::Marker>("/locobot/camera_cube_locator",1);
-	// Subscriber declarations
-	ros::Subscriber cam_info_sub_ = nh.subscribe(depth_img_camera_info_,1,&Matching_Pix_to_Ptcld::info_callback,this);
-	ros::Subscriber depth_sub_ = nh.subscribe(depth_image_topic_,1,&Matching_Pix_to_Ptcld::depth_callback,this);
-	ros::Subscriber rgb_image_sub_ = nh.subscribe(color_image_topic_,1,&Matching_Pix_to_Ptcld::color_image_callback,this);
+	nh.param<std::string>("pt_srv_reg_pt_cld_topic", registered_pt_cld_topic_, "/locobot/camera/depth_registered/points");
 
+
+  // Publisher declarations
+	image_color_filt_pub_ = nh.advertise<sensor_msgs::Image>("/locobot/camera/block_color_filt_img",1);
+	camera_cube_locator_marker_ = nh.advertise<visualization_msgs::Marker>("/locobot/camera_cube_locator",1);
+	// Subscriber declarations
+	cam_info_sub_ = nh.subscribe(depth_img_camera_info_,1,&Matching_Pix_to_Ptcld::info_callback,this);
+	depth_sub_ = nh.subscribe(depth_image_topic_,1,&Matching_Pix_to_Ptcld::depth_callback,this);
+	rgb_image_sub_ = nh.subscribe(color_image_topic_,1,&Matching_Pix_to_Ptcld::color_image_callback,this);
+	// cloud_sub_ = nh.subscribe(registered_pt_cld_topic_, 1, &Matching_Pix_to_Ptcld::cloudCallback,this);
+    
+
+	depth_cam_info_ready_ = false; //set this to false so that depth doesn't ask for camera_model_ until its been set
 	//Service
 	service_ = nh.advertiseService("pix_to_point_cpp", &Matching_Pix_to_Ptcld::service_callback, this);
 }
@@ -147,7 +172,15 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
 void Matching_Pix_to_Ptcld::info_callback(const sensor_msgs::CameraInfo::ConstPtr& msg){
 	//create a camera model from the camera info
 	camera_model_.fromCameraInfo(msg);
+	depth_cam_info_ready_ = true;
+	
 }
+
+// void Matching_Pix_to_Ptcld::cloudCallback(const sensor_msgs::PointCloud2ConstPtr& msg)
+// {
+//     cloud_msg_ = msg;
+// }
+
 
 void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::Image::ConstPtr& msg){
 	// Convert depth img into CV image pointer then to cv::Mat type for manipulation.
@@ -163,41 +196,89 @@ void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::Image::ConstPtr& m
 		}
 	cv::Mat depth_mat = depth_img_ptr->image; //convert to traditional cv::Mat image type
 
-	cv::Scalar depth = depth_mat.at<uchar>(uv_pix_.x,uv_pix_.y);
+	// cv::Scalar depth = depth_mat.at<uchar>(uv_pix_.x,uv_pix_.y);
+	cv::Scalar depth = depth_mat.at<uchar>(uv_pix_.y,uv_pix_.x);
 	double depth_norm = cv::norm(depth);
+
+	std::cout << "the original depth " << depth << " the depth norm" << depth_norm << std::endl;
 
 	if (depth_norm == 0)
 	{
-		ROS_INFO("Skipping cause pixel had no depth");
+		ROS_WARN("Skipping cause pixel had no depth");
 		return;
 	}else{
-		//Pixel has depth, now we need to find the corresponding point in the pointcloud
-		//Use the camera model to get the 3D ray for the current pixel
-		cv::Point2d pixel(uv_pix_.y, uv_pix_.x);
-		cv::Point3d ray = camera_model_.projectPixelTo3dRay(pixel);
-		//Calculate the 3D point on the ray using the depth value
-		cv::Point3d point_3d = ray*depth_norm;
+		if (depth_cam_info_ready_)
+		{
+			ROS_INFO("Performing Calculation in depth callback");
+			//Pixel has depth, now we need to find the corresponding point in the pointcloud
+			//Use the camera model to get the 3D ray for the current pixel
+			// cv::Point2d pixel(uv_pix_.y, uv_pix_.x);
+			cv::Point2d pixel(uv_pix_.x, uv_pix_.y);
+			cv::Point3d ray = camera_model_.projectPixelTo3dRay(pixel);
+			//Calculate the 3D point on the ray using the depth value
+			cv::Point3d point_3d = ray*depth_norm;
 
-		geometry_msgs::PointStamped point_3d_geom_msg; 
-		point_3d_geom_msg.header = msg->header;
-		point_3d_geom_msg.point.x = point_3d.x;
-		point_3d_geom_msg.point.y = point_3d.y;
-		point_3d_geom_msg.point.z = point_3d.z;
 
-		//Transform the point to the pointcloud frame using tf
-		std::string point_cloud_frame = camera_model_.tfFrame();
-		// point_3d_cloud = self.listener.transformPoint(point_cloud_frame, point_3d_geom_msg)
+		// Convert the PointCloud2 message to a PCL point cloud
+    
+    /*
+    pcl::PCLPointCloud2 pcl_pc2;
+    pcl_conversions::toPCL(*cloud_msg_, pcl_pc2);
+    
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::fromPCLPointCloud2(pcl_pc2, *cloud);
 
-		// Get the camera pose in the desired reference frame
-		geometry_msgs::TransformStamped transform;
-		try {
-		    transform = tf_buffer_.lookupTransform(point_cloud_frame, msg->header.frame_id, ros::Time(0));
-		} catch (tf2::TransformException &ex) {
-		    ROS_ERROR("%s", ex.what());
+    // Intersect the 3D ray with the point cloud
+    float max_dist = std::numeric_limits<float>::max();
+    int index = -1;
+    for (int i = 0; i < cloud->points.size(); i++)
+    {
+        pcl::PointXYZ p = cloud->points[i];
+        float dist = (p.x - point3d.x) * (p.x - point3d.x) +
+                     (p.y - point3d.y) * (p.y - point3d.y) +
+                     (p.z - point3d.z) * (p.z - point3d.z);
+        if (dist < max_dist)
+        {
+            max_dist = dist;
+            index = i;
+        }
+    }
+
+    if (index >= 0)
+    {
+        // Found a valid point in the point cloud
+        pcl::PointXYZ p = cloud->points[index];
+        cout << "Point in point cloud: " << p.x << " " << p.y << " " << p.z << endl;
+    }
+    else
+    {
+        // Did not find a valid point in the point cloud
+        cout << "Point not found in point cloud." << endl;
+    }
+	*/
+
+			geometry_msgs::PointStamped point_3d_geom_msg; 
+			point_3d_geom_msg.header = msg->header;
+			point_3d_geom_msg.point.x = point_3d.x;
+			point_3d_geom_msg.point.y = point_3d.y;
+			point_3d_geom_msg.point.z = point_3d.z;
+
+			//Transform the point to the pointcloud frame using tf
+			std::string point_cloud_frame = camera_model_.tfFrame();
+			// point_3d_cloud = self.listener.transformPoint(point_cloud_frame, point_3d_geom_msg)
+
+			// Get the camera pose in the desired reference frame
+			geometry_msgs::TransformStamped transform;
+			try {
+			    transform = tf_buffer_.lookupTransform(point_cloud_frame, msg->header.frame_id, ros::Time(0));
+			} catch (tf2::TransformException &ex) {
+			    ROS_ERROR("%s", ex.what());
+			}
+
+			// Transform a point cloud point
+			tf2::doTransform(point_3d_geom_msg, point_3d_cloud_, transform); // syntax: (points_in, points_out, transform)
 		}
 
-		// Transform a point cloud point
-		tf2::doTransform(point_3d_geom_msg, point_3d_cloud_, transform); // syntax: (points_in, points_out, transform)
 	}
 }
 
@@ -225,25 +306,38 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::Image::Const
   cv::Mat mask;
   cv::inRange(hsv, lower_bound, upper_bound, mask);
 
-  // NOW THIS CODE BELOW MAKES THE VERY STRONG ASSUMPTION THAT THERE IS ONLY ONE CUBE IN THE FIELD OF VIEW OF THE DESIRED COLOR IN THE MASK - IT AVERAGES THE MASK PIXELS TO FIND THE CENTER
-	std::vector<cv::Point> locations;
-  cv::findNonZero(mask, locations);
-  cv::Mat points_mat(locations);
-  cv::Scalar mean_point = cv::mean(points_mat);
-  cv::Point2f avg_location(mean_point[0], mean_point[1]); //this step is not necessary, elements of mean_point could be used directly, but this is just very explicit
+  // ***NOW THIS CODE BELOW MAKES THE VERY STRONG ASSUMPTION THAT THERE IS ONLY ONE CUBE IN THE FIELD OF VIEW OF THE DESIRED COLOR IN THE MASK - IT AVERAGES THE MASK PIXELS TO FIND THE CENTER	
+  cv::Mat mask_img; //this is the result 	//Apply the mask; black region in the mask is 0, so when multiplied with original image removes all non-selected color
+  cv::bitwise_and(color_img_ptr->image, color_img_ptr->image, mask_img, mask); //https://docs.opencv.org/3.4/d2/de8/group__core__array.html#ga60b4d04b251ba5eb1392c34425497e14  
+	// Find the average pixel location
+  int count = 0;
+  int x = 0;
+  int y = 0;
+  for(int i = 0; i < mask_img.rows; i++)
+  {
+      for(int j = 0; j < mask_img.cols; j++)
+      {
+          if(mask_img.at<cv::Vec3b>(i, j) != cv::Vec3b(0, 0, 0))
+          {
+              count++;
+              x += i;
+              y += j;
+          }
+      }
+  }
+  x /= count;
+  y /= count;
+  // Turn the average pixel location white; Make the center point pixel bright so it shows up in this image
+  mask_img.at<cv::Vec3b>(x, y) = cv::Vec3b(255, 255, 255);
 	//Store this in global variable:  
-  uv_pix_.x = avg_location.x; 
-  uv_pix_.y = avg_location.y;
-  //Apply the mask; black region in the mask is 0, so when multiplied with original image removes all non-selected color
-  cv::Mat mask_img; //this is the result
-  cv::bitwise_and(color_img_ptr->image, color_img_ptr->image, mask_img, mask); //https://docs.opencv.org/3.4/d2/de8/group__core__array.html#ga60b4d04b251ba5eb1392c34425497e14
-  //Make the center point pixel bright so it shows up in this image
-  mask_img.at<uchar>(uv_pix_.x,uv_pix_.y) = 100;
+  uv_pix_.x = x;//avg_location.x; 
+  uv_pix_.y = y;//avg_location.y;
+  
   //Publish the image (color img with mask applied)
   cv_bridge::CvImage cv_bridge_mask_image;
   cv_bridge_mask_image.header.stamp = ros::Time::now();
   cv_bridge_mask_image.header.frame_id = msg->header.frame_id;
-  cv_bridge_mask_image.encoding = sensor_msgs::image_encodings::RGB8;
+  cv_bridge_mask_image.encoding = sensor_msgs::image_encodings::RGB8;//::MONO8;
   cv_bridge_mask_image.image = mask_img;
   sensor_msgs::Image ros_mask_image; //now convert from cv::Mat image back to ROS sensor_msgs image
   cv_bridge_mask_image.toImageMsg(ros_mask_image);
@@ -264,7 +358,7 @@ bool Matching_Pix_to_Ptcld::service_callback(me326_locobot_example::PixtoPoint::
 int main(int argc, char **argv)
 {
   ros::init(argc,argv,"matching_ptcld_serv");
-  ros::NodeHandle nh("~");
+  // ros::NodeHandle nh("~");
   Matching_Pix_to_Ptcld ctd_obj;
   ros::spin();
   return 0;
