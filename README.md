@@ -394,14 +394,20 @@ $ ./launch_locobot_gazebo_moveit.sh
 ```
 this takes several seconds to load. In a separate terminal you are encouraged to open either `$ rosrun rqt_image_view rqt_image_view` (for single image inspection), or run `$ rqt`, then in the top menu select 'Plugins', then 'Visualization', then 'Image view' (do this twice). Then once you run the code below you will want to subscribe to the topics '/locobot/camera/color/image_raw' and '/locobot/camera/block_color_filt_img' in these windows.
 
-#### Step 2: Run the (python) service to find the pointcloud
-Run the service by doing the following in a new terminal: 
+#### Step 2: Run the C++ (or python) service to find the pointcloud
+Run the C++ service by doing the following in a new terminal: 
+```
+rosrun me326_locobot_example matching_ptcld_serv
+```
+This initiates the service, now you can call the service in a new terminal with: `rosservice call /pix_to_point_cpp "{}"`. Be sure to observe the image '/locobot/camera/block_color_filt_img' through one of the *rqt* viewing options. This runs on a 16GB RAM with 12 cores faster than 5Hz (<0.2sec) with all other processing running concurrently.
+
+##### Depreciated Python Implementation (for reference):
 ```
 rosrun me326_locobot_example matching_ptcld.py 
 ```
 This initiates the service, now you can call the service: `$ rosservice call /pix_to_point "{}"` in a new terminal. Be sure to observe the image '/locobot/camera/block_color_filt_img' through one of the *rqt* viewing options.
 
-Note, this is *very very slow (10sec)*, we are working on a C++ implementation of this example service that should be a lot faster. But if you use the python implementation, you will have to pause for about 10sec for it to perform an update on the masking of the image on an ordinary laptop.
+Note, this is *very very slow (10sec)*, for realtime use we recommend using the C++ implementation above. If you use this version you will have to pause for about 10sec for it to perform an update on the masking of the image on an ordinary laptop and subsequent steps...
 
 #### Step 3: Visualize in RViz
 Open the RViz window and hit the *Add* button above the Motion Planning section, this will then give you the option to *create a visualization* either 'By display type' or 'By topic'. Choose under 'By topic', then you will want to repeat this process twice for the following two topics: 
