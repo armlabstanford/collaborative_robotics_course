@@ -416,6 +416,8 @@ Open the RViz window and hit the *Add* button above the Motion Planning section,
 
 With these enabled, you can then navigate RViz to see the depth point cloud in 3D (note the cube colors are incorrect with this cloud - refer to gazebo and the camera image for correct color), and the marker is *close* to the desired point. To see the utility of this method further, you can pan the camera back and forth with the terminal input `rostopic pub /locobot/pan_controller/command std_msgs/Float64 "data: 0.5"` and `rostopic pub /locobot/pan_controller/command std_msgs/Float64 "data: 0.0"` (you will notice the significant delay for the python version of this serivce in '/locobot/camera/block_color_filt_img').
 
+#### Extending to multiple blocks
+Now what do you do if you have multiple blocks in your scene? Perhaps you want to find all the red blocks and the center of these pixel regions corresponding to each block. One way to achieve this is using the OpenCV 'Blob Detection'. Examples and API for this can be found here: [https://learnopencv.com/blob-detection-using-opencv-python-c/](https://learnopencv.com/blob-detection-using-opencv-python-c/) and the [OpenCV Blob Detection API](https://docs.opencv.org/3.4/d0/d7a/classcv_1_1SimpleBlobDetector.html). 
 
 ## Example Moveit in Python
 The script `locobot_motion_example.py` provides examples of how to move the arm and camera of the locobot. It must be launched in the appropriate namespace which is why it can be run with the launch file: 
