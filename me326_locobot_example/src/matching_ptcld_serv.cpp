@@ -237,6 +237,10 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::Image::Const
           }
       }
   }
+  if (count == 0) {
+	// Can't see red cube anymore
+	return;
+  }
   x /= count;
   y /= count;
   // Turn the average pixel location white; Make the center point pixel bright so it shows up in this image
