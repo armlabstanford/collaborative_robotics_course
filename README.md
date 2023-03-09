@@ -61,6 +61,27 @@ $./xslocobot_remote_install.sh -d noetic -b kobuki
 
 Note: if you mess up while installing, just delete the interbotix_ws (from the level above the folder: `$ rm -rf interbotix_ws`) folder, then do the following in terminal `$ export ROS_IP=""`, then you can run the shell script again.
 
+### Additional packaes
+```
+$ cd ~/interbotix_ws/src/
+$ git clone https://github.com/Interbotix/interbotix_ros_toolboxes.git
+$ git clone https://github.com/Interbotix/interbotix_ros_core.git
+$ git clone https://github.com/Interbotix/interbotix_ros_manipulators.git
+
+$ find . -type f -name 'CATKIN_IGNORE' -delete
+
+$ git clone https://github.com/yujinrobot/kobuki.git
+$ git clone https://github.com/yujinrobot/yujin_ocs.git
+
+$ cd ~/interbotix_ws/src/yujin_ocs/
+$ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") 
+
+$ sudo apt install ros-noetic-kobuki*
+$ sudo apt install ros-noetic-realsense2*
+$ sudo apt install ros-noetic-rplidar*
+$ sudo apt install ros-noetic-roboticsgroup*
+```
+These packages are necessary to catkin_make the interbotix workspace
 
 ## Running the Example Script for Motion from A to B
 ### Setting up the workspace
