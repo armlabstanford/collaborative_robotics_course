@@ -81,7 +81,12 @@ $ sudo apt install ros-noetic-realsense2*
 $ sudo apt install ros-noetic-rplidar*
 $ sudo apt install ros-noetic-roboticsgroup*
 ```
-These packages are necessary to catkin_make the interbotix workspace
+These packages are necessary to catkin_make interbotix_ws.
+Now, run the folowing to build the interbotix workspace.
+```
+$ cd ~/interbotix_ws/
+$ catkin_make
+```
 
 ## Running the Example Script for Motion from A to B
 ### Setting up the workspace
