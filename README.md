@@ -55,8 +55,8 @@ On this page, follow these [instructions from Trossen Robotics](https://docs.tro
 ```
 $ sudo apt install curl
 $ curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_rovers/main/interbotix_ros_xslocobots/install/xslocobot_remote_install.sh' > xslocobot_remote_install.sh
-$chmod +x xslocobot_remote_install.sh
-$./xslocobot_remote_install.sh -d noetic -b kobuki
+$ chmod +x xslocobot_remote_install.sh
+$ ./xslocobot_remote_install.sh -d noetic -b kobuki
 ```
 
 Note: if you mess up while installing, just delete the interbotix_ws (from the level above the folder: `$ rm -rf interbotix_ws`) folder, then do the following in terminal `$ export ROS_IP=""`, then you can run the shell script again.
