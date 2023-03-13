@@ -76,6 +76,9 @@ $ git clone https://github.com/yujinrobot/yujin_ocs.git
 $ cd ~/interbotix_ws/src/yujin_ocs/
 $ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") 
 
+$ sudo apt-get install ros-noetic-joint-trajectory-controller
+$ sudo apt-get install ros-noetic-effort-controllers
+$ sudo apt-get install ros-noetic-moveit*
 $ sudo apt install ros-noetic-kobuki*
 $ sudo apt install ros-noetic-realsense2*
 $ sudo apt install ros-noetic-rplidar*
@@ -473,6 +476,20 @@ camera_orient_obj.tilt_camera(angle=0.5)
 rospy.spin()
 ```
 the value of the angle can be changed as desired (note the `rospy.spin()` is necessary).
+
+## Run any node on the physical robots:
+1. Run the following on locobot computer via ssh
+- For navigation, run,
+```
+$ roslaunch interbotix_xslocobot_nav xslocobot_nav.launch robot_model:=locobot_wx250s use_lidar:=true rtabmap_args:=-d
+```
+- For controlling the arm and using moveit, run,
+```
+$ roslaunch interbotix_xslocobot_moveit xslocobot_moveit.launch robot_model:=locobot_wx250s show_lidar:=true use_gazebo:=false use_actual:=true use_camera:=true dof:=6
+```
+- To run the above without rviz, add use_moveit_rviz:=false
+2. Run your node on your computer
+rosrun <your-package> <your-node>
 
 ## Steps towards running multiple robots
 On this page ([page link](https://docs.trossenrobotics.com/interbotix_xslocobots_docs/ros1_packages/locobot_descriptions.html)), Trossen provides the initial steps for running multiple robots at once
