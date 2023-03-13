@@ -489,7 +489,9 @@ $ roslaunch interbotix_xslocobot_moveit xslocobot_moveit.launch robot_model:=loc
 ```
 - To run the above without rviz, add use_moveit_rviz:=false
 2. Run your node on your computer
-rosrun <your-package> <your-node>
+```
+$ rosrun <your-package> <your-node>
+```
 
 ## Steps towards running multiple robots
 On this page ([page link](https://docs.trossenrobotics.com/interbotix_xslocobots_docs/ros1_packages/locobot_descriptions.html)), Trossen provides the initial steps for running multiple robots at once
