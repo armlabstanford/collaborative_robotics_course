@@ -478,7 +478,7 @@ rospy.spin()
 the value of the angle can be changed as desired (note the `rospy.spin()` is necessary).
 
 ## Run any node on the physical robots:
-1. Run the following on locobot computer via ssh
+1. Run any of the following on locobot computer via ssh
 - For navigation, run,
 ```
 $ roslaunch interbotix_xslocobot_nav xslocobot_nav.launch robot_model:=locobot_wx250s use_lidar:=true rtabmap_args:=-d
@@ -488,6 +488,10 @@ $ roslaunch interbotix_xslocobot_nav xslocobot_nav.launch robot_model:=locobot_w
 $ roslaunch interbotix_xslocobot_moveit xslocobot_moveit.launch robot_model:=locobot_wx250s show_lidar:=true use_gazebo:=false use_actual:=true use_camera:=true dof:=6
 ```
 - To run the above without rviz, add use_moveit_rviz:=false
+- Alternatively, you can run
+```
+$ roslaunch interbotix_xslocobot_control xslocobot_python.launch robot_model:=locobot_wx250s show_lidar:=true
+```
 2. Run your node on your computer
 ```
 $ rosrun <your-package> <your-node>
