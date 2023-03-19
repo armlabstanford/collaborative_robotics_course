@@ -63,18 +63,23 @@ Note: if you mess up while installing, just delete the interbotix_ws (from the l
 
 ### Additional packaes
 ```
-$ cd ~/interbotix_ws/src/
+$ cd ~/interbotix_ws/
+$ rm -rf build devel
+
+$ cd ~/interbotix_ws/src
 $ git clone https://github.com/Interbotix/interbotix_ros_toolboxes.git
 $ git clone https://github.com/Interbotix/interbotix_ros_core.git
-$ git clone https://github.com/Interbotix/interbotix_ros_manipulators.git
+
+
+~~ git clone https://github.com/Interbotix/interbotix_ros_manipulators.git ~~
+
+~~ git clone https://github.com/yujinrobot/kobuki.git ~~
+~~ git clone https://github.com/yujinrobot/yujin_ocs.git ~~
+
+~~ cd ~/interbotix_ws/src/yujin_ocs/ ~~
+~~ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") ~~
 
 $ find . -type f -name 'CATKIN_IGNORE' -delete
-
-$ git clone https://github.com/yujinrobot/kobuki.git
-$ git clone https://github.com/yujinrobot/yujin_ocs.git
-
-$ cd ~/interbotix_ws/src/yujin_ocs/
-$ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") 
 
 $ sudo apt-get install ros-noetic-joint-trajectory-controller
 $ sudo apt-get install ros-noetic-effort-controllers
@@ -84,22 +89,19 @@ $ sudo apt install ros-noetic-realsense2*
 $ sudo apt install ros-noetic-rplidar*
 $ sudo apt install ros-noetic-roboticsgroup*
 ```
-These packages are necessary to catkin_make interbotix_ws.
-Now, run the folowing to build the interbotix workspace.
-```
-$ cd ~/interbotix_ws/
-$ catkin_make
-```
 
 ## Running the Example Script for Motion from A to B
-### Setting up the workspace
+
+### Setting up the collaborative_robotics_course package
 Following the [catkin-python-tools quickstart guide](https://catkin-tools.readthedocs.io/en/latest/quick_start.html) for your distro (e.g. noetic, as opposed to indigo), do each line below sequentially:
 ```
-$ cd ~/
-$ mkdir -p ~/me326_ws/src
-$ cd ~/me326_ws/
-$ catkin init
-$ cd ~/me326_ws/src/
+~~ cd ~/ ~~
+~~ mkdir -p ~/me326_ws/src ~~
+~~ cd ~/me326_ws/ ~~
+~~ catkin init ~~
+~~ cd ~/me326_ws/src/ ~~
+
+$ cd ~/interbotix_ws/src
 $ git clone https://github.com/armlabstanford/collaborative_robotics_course.git
 $ git clone https://github.com/catkin/catkin_simple.git
 $ catkin build -cs
@@ -417,9 +419,9 @@ this drops four blocks of primary colors into the gazebo world. You can make mor
 The following block of code allows you to run moveit, spawn the blocks, moves the arm down and adjusts the camera to see the blocks. Then, we use a service to visualize the block (red block in this example) and find the corresponding point in the point cloud: 
 
 #### Step 1: Run the base environment and launch the python service to match pixel to point cloud
-First go to the class folder `$ roscd me326_locobot_example/launch/` then type: 
+First go to the class folder `$ roscd me326_locobot_example` then type: 
 ```
-$ ./launch_locobot_gazebo_moveit.sh
+$ ./launch/launch_locobot_gazebo_moveit.sh
 ```
 this takes several seconds to load. In a separate terminal you are encouraged to open either `$ rosrun rqt_image_view rqt_image_view` (for single image inspection), or run `$ rqt`, then in the top menu select 'Plugins', then 'Visualization', then 'Image view' (do this twice). Then once you run the code below you will want to subscribe to the topics '/locobot/camera/color/image_raw' and '/locobot/camera/block_color_filt_img' in these windows.
 
