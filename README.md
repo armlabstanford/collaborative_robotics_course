@@ -46,6 +46,17 @@ refer to this link for the [quickstart](https://catkin-tools.readthedocs.io/en/l
 $ sudo apt-get install ros-noetic-pcl-*
 ```
 
+- Install additional ROS Libraries.
+```
+$ sudo apt-get install ros-noetic-joint-trajectory-controller
+$ sudo apt-get install ros-noetic-effort-controllers
+$ sudo apt-get install ros-noetic-moveit*
+$ sudo apt install ros-noetic-kobuki*
+$ sudo apt install ros-noetic-realsense2*
+$ sudo apt install ros-noetic-rplidar*
+$ sudo apt install ros-noetic-roboticsgroup*
+```
+
 - To make file management easier for the package.xml and CMakeLists, this tutorial leverages the [helper code "catkin simple"](https://github.com/catkin/catkin_simple) when you make your package below you will import it into your workspace with `git clone https://github.com/catkin/catkin_simple.git`
 - Become familiar with Github [github tutorials](https://docs.github.com/en/get-started/quickstart/hello-world), (learn with bitbucket tutorial, same methods, great graphics: [bitbucket tutorial](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud))
 
@@ -61,7 +72,7 @@ $ ./xslocobot_remote_install.sh -d noetic -b kobuki
 
 Note: if you mess up while installing, just delete the interbotix_ws (from the level above the folder: `$ rm -rf interbotix_ws`) folder, then do the following in terminal `$ export ROS_IP=""`, then you can run the shell script again.
 
-### Additional packaes
+### Additional packages
 ```
 $ cd ~/interbotix_ws/
 $ rm -rf build devel
@@ -70,50 +81,42 @@ $ cd ~/interbotix_ws/src
 $ git clone https://github.com/Interbotix/interbotix_ros_toolboxes.git
 $ git clone https://github.com/Interbotix/interbotix_ros_core.git
 
+$ find . -type f -name 'CATKIN_IGNORE' -delete
+```
 
-~~ git clone https://github.com/Interbotix/interbotix_ros_manipulators.git ~~
+<!-- ~~ git clone https://github.com/Interbotix/interbotix_ros_manipulators.git ~~
 
 ~~ git clone https://github.com/yujinrobot/kobuki.git ~~
 ~~ git clone https://github.com/yujinrobot/yujin_ocs.git ~~
 
 ~~ cd ~/interbotix_ws/src/yujin_ocs/ ~~
 ~~ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") ~~
-
-$ find . -type f -name 'CATKIN_IGNORE' -delete
-
-$ sudo apt-get install ros-noetic-joint-trajectory-controller
-$ sudo apt-get install ros-noetic-effort-controllers
-$ sudo apt-get install ros-noetic-moveit*
-$ sudo apt install ros-noetic-kobuki*
-$ sudo apt install ros-noetic-realsense2*
-$ sudo apt install ros-noetic-rplidar*
-$ sudo apt install ros-noetic-roboticsgroup*
-```
-
-## Running the Example Script for Motion from A to B
+ -->
 
 ### Setting up the collaborative_robotics_course package
 Following the [catkin-python-tools quickstart guide](https://catkin-tools.readthedocs.io/en/latest/quick_start.html) for your distro (e.g. noetic, as opposed to indigo), do each line below sequentially:
-```
-~~ cd ~/ ~~
+
+<!-- ~~ cd ~/ ~~
 ~~ mkdir -p ~/me326_ws/src ~~
 ~~ cd ~/me326_ws/ ~~
 ~~ catkin init ~~
-~~ cd ~/me326_ws/src/ ~~
+~~ cd ~/me326_ws/src/ ~~ -->
 
+```
 $ cd ~/interbotix_ws/src
 $ git clone https://github.com/armlabstanford/collaborative_robotics_course.git
 $ git clone https://github.com/catkin/catkin_simple.git
 $ catkin build -cs
 ```
 (this last line `$ catkin build -cs` tells the system to build the workspace, if there are other packages (in the future), continue if any fail then summarize. If you want to build a particular package (name pkg) you can also say `$catkin build pkg`, and if you are in the package directory `$catkin build this` which can be abreviated to `$ catkin bt`.
-
+<!-- 
 Now you must add this workspace to your `~/.bashrc` so that your code can be run from any newly opened terminal: 
 ```
 $ echo "source ~/me326_ws/devel/setup.bash" >> ~/.bashrc
-```
+``` -->
 Then in a new terminal (hot keys <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>), you should be able to quickly navigate to the compiled and sourced repo: `$ roscd me326_locobot_example`
 
+## Running the Example Script for Motion from A to B
 
 ### Running the environment
 There are two options: 
