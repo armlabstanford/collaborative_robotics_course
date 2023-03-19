@@ -72,11 +72,8 @@ $ ./xslocobot_remote_install.sh -d noetic -b kobuki
 
 Note: if you mess up while installing, just delete the interbotix_ws (from the level above the folder: `$ rm -rf interbotix_ws`) folder, then do the following in terminal `$ export ROS_IP=""`, then you can run the shell script again.
 
-### Additional packages
+### Additional Interbotix Packages
 ```
-$ cd ~/interbotix_ws/
-$ rm -rf build devel
-
 $ cd ~/interbotix_ws/src
 $ git clone https://github.com/Interbotix/interbotix_ros_toolboxes.git
 $ git clone https://github.com/Interbotix/interbotix_ros_core.git
@@ -101,11 +98,17 @@ Following the [catkin-python-tools quickstart guide](https://catkin-tools.readth
 ~~ cd ~/me326_ws/ ~~
 ~~ catkin init ~~
 ~~ cd ~/me326_ws/src/ ~~ -->
-
+Clone the course and catkin-simple packages
 ```
 $ cd ~/interbotix_ws/src
 $ git clone https://github.com/armlabstanford/collaborative_robotics_course.git
 $ git clone https://github.com/catkin/catkin_simple.git
+```
+
+Now, we remove the existing make files in the workspace and rebuild the workspace using 'catkin build'
+```
+$ cd ~/interbotix_ws/
+$ rm -rf build devel
 $ catkin build -cs
 ```
 (this last line `$ catkin build -cs` tells the system to build the workspace, if there are other packages (in the future), continue if any fail then summarize. If you want to build a particular package (name pkg) you can also say `$catkin build pkg`, and if you are in the package directory `$catkin build this` which can be abreviated to `$ catkin bt`.
