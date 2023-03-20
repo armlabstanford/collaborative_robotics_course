@@ -46,17 +46,6 @@ refer to this link for the [quickstart](https://catkin-tools.readthedocs.io/en/l
 $ sudo apt-get install ros-noetic-pcl-*
 ```
 
-- Install additional ROS Libraries.
-```
-$ sudo apt-get install ros-noetic-joint-trajectory-controller
-$ sudo apt-get install ros-noetic-effort-controllers
-$ sudo apt-get install ros-noetic-moveit*
-$ sudo apt install ros-noetic-kobuki*
-$ sudo apt install ros-noetic-realsense2*
-$ sudo apt install ros-noetic-rplidar*
-$ sudo apt install ros-noetic-roboticsgroup*
-```
-
 - To make file management easier for the package.xml and CMakeLists, this tutorial leverages the [helper code "catkin simple"](https://github.com/catkin/catkin_simple) when you make your package below you will import it into your workspace with `git clone https://github.com/catkin/catkin_simple.git`
 - Become familiar with Github [github tutorials](https://docs.github.com/en/get-started/quickstart/hello-world), (learn with bitbucket tutorial, same methods, great graphics: [bitbucket tutorial](https://www.atlassian.com/git/tutorials/learn-git-with-bitbucket-cloud))
 
@@ -89,6 +78,17 @@ $ find . -type f -name 'CATKIN_IGNORE' -delete
 ~~ cd ~/interbotix_ws/src/yujin_ocs/ ~~
 ~~ rm -r !("yocs_cmd_vel_mux"|"yocs_controllers"|"yocs_velocity_smoother") ~~
  -->
+
+- Install additional ROS Libraries.
+```
+$ sudo apt-get install ros-noetic-joint-trajectory-controller
+$ sudo apt-get install ros-noetic-effort-controllers
+$ sudo apt-get install ros-noetic-moveit*
+$ sudo apt install ros-noetic-kobuki*
+$ sudo apt install ros-noetic-realsense2*
+$ sudo apt install ros-noetic-rplidar*
+$ sudo apt install ros-noetic-roboticsgroup*
+```
 
 ### Setting up the collaborative_robotics_course package
 Following the [catkin-python-tools quickstart guide](https://catkin-tools.readthedocs.io/en/latest/quick_start.html) for your distro (e.g. noetic, as opposed to indigo), do each line below sequentially:
