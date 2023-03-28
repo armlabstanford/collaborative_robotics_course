@@ -1,6 +1,6 @@
 # ME 326 Collaborative Robotics Stanford University
 
-This repo is for getting started using Locobots in ME326 Collaborative Robotics Course at Stanford University taught by Prof. Monroe Kennedy ([Course Website](https://arm.stanford.edu/courses/me-326-collaborative-robotics))
+This repo is for getting started using Locobots in ME326 Collaborative Robotics Course at Stanford University taught by Prof. Monroe Kennedy ([Course Website](https://arm.stanford.edu/courses/me-326-collaborative-robotics) - checkout student implementations and their github repos at the bottom of the page)
 
 ## Getting Started
 If you are new to Linux ([how to install ubuntu/linux](https://ubuntu.com/tutorials/install-ubuntu-desktop#1-overview)) and ROS, the following are links you should start with once linux is installed: 
