@@ -155,10 +155,10 @@ def main():
 	move_arm_obj.move_arm_down_for_camera()
 
 	#Uncomment below to move gripper down for grasping (note the frame is baselink; z=0 is the ground (hitting the ground!))
-	# move_arm_obj.open_gripper()
-	# move_arm_obj.move_gripper_down_to_grasp()
-	# move_arm_obj.close_gripper()
-	# move_arm_obj.open_gripper()
+	move_arm_obj.open_gripper()
+	move_arm_obj.move_gripper_down_to_grasp()
+	move_arm_obj.close_gripper()
+	move_arm_obj.open_gripper()
 
 	# Point the camera toward the blocks
 	camera_orient_obj = OrientCamera()
