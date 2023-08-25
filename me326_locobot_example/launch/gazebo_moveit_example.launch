@@ -2,7 +2,7 @@
 <launch>
 
 <group ns="locobot">
-  <node type="locobot_motion_example.py" name="locobot_motion_example" pkg="me326_locobot_example" respawn="false" output="screen" />
+	<node type="locobot_motion_example.py" name="locobot_motion_example" pkg="me326_locobot_example" respawn="false" output="screen"/>
 </group>
 
 </launch>

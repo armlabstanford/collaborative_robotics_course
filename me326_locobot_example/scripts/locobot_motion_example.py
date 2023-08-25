@@ -87,19 +87,19 @@ class MoveLocobotArm(object):
 		print(self.robot.get_current_state())
 		print("\n")
 		
+
 	def close_gripper(self):
 		gripper_goal = self.gripper_move_group.get_current_joint_values()
-		print("grippers",gripper_goal)
-		gripper_goal[0] = 0.037
-		gripper_goal[1] = -0.037
+		print("grippers current: ",gripper_goal)
+		gripper_goal[0] = 0.0151
+		gripper_goal[1] = -0.0151
 		self.gripper_move_group.go(gripper_goal, wait=True)
-
 	def open_gripper(self):
 		gripper_goal = self.gripper_move_group.get_current_joint_values()
-		gripper_goal[0] = -0.037
-		gripper_goal[1] = 0.037
+		print("grippers current: ",gripper_goal)
+		gripper_goal[0] = 0.035
+		gripper_goal[1] = -0.035
 		self.gripper_move_group.go(gripper_goal, wait=True)
-
 
 	def move_arm_down_for_camera(self):
 		#start here
