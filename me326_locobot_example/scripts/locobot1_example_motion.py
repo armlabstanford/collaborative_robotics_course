@@ -11,9 +11,7 @@ The robot is first controlled to point B, then is instructed to return to point 
 
 read more about rospy publishers/subscribers here: http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29
 '''
-import rclpy
-from rclpy.node import Node
-
+import rospy
 import numpy as np
 import scipy as sp
 from scipy import linalg
@@ -25,7 +23,7 @@ from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker
 
 
-class LocobotExample(Node):
+class LocobotExample(object):
     """Class for example operations for locobot control
     Point A: the origin (x,y,z) = (0,0,0)
     Point B: the point (x,y,z) = (1,0,0)
@@ -34,25 +32,17 @@ class LocobotExample(Node):
     The pose of the Locobot is defined by its (x,y) position 
     """
     def __init__(self):
-        super().__init__('locobot_back_and_forth')
-
-        self.current_target = "B" #points A and B, if A it is the origin, if B it is the second specified point. This sript
+        self.current_target = "B" #points A and B, if A its the origin, if B it is the second specified point. This sript
         self.target_pose_reached_bool = False
         self.target_pose = None
 
-        self.point_P_control_point_visual = self.create_publisher(Marker, "/locobot/mobile_base/control_point_P", 10) #this can then be visualized in RVIZ (ros visualization)
-        self.target_pose_visual = self.create_publisher(Marker, "/locobot/mobile_base/target_pose_visual", 10)
+        self.mobile_base_vel_publisher = rospy.Publisher("/locobot_1/mobile_base/commands/velocity", Twist, queue_size=1) #this is the topic we will publish to in order to move the base
+        self.point_P_control_point_visual = rospy.Publisher("/locobot_1/mobile_base/control_point_P",Marker,queue_size=1) #this can then be visualized in RVIZ (ros visualization)
 
-        # Command Velocity Publisher
-        # self.mobile_base_vel_publisher = self.create_publisher(Twist, "/locobot/mobile_base/commands/velocity", 10) #this is the topic we will publish to in order to move the base
-        # self.mobile_base_vel_publisher = self.create_publisher(Odometry, "/locobot/odom", 10) #this is the topic we will publish to in order to move the base
-        self.mobile_base_vel_publisher = self.create_publisher(Twist, "/locobot/mobile_base/cmd_vel", 10) #this is the topic we will publish to in order to move the base
-        
-        # Base Odom Subscriber
-        self.create_subscription(Odometry, "/locobot/mobile_base/odom", self.mobile_base_callback, 10) #this says: listen to the odom message, of type odometry, and send that to the callback function specified
-        # self.create_subscription(Odometry, "/odom", self.mobile_base_callback, 10) #this says: listen to the odom message, of type odometry, and send that to the callback function specified
+        self.target_pose_visual = rospy.Publisher("/locobot_1/mobile_base/target_pose_visual",Marker, queue_size=1)
 
         self.L = 0.1 #this is the distance of the point P (x,y) that will be controlled for position. The locobot base_link frame points forward in the positive x direction, the point P will be on the positive x-axis in the body-fixed frame of the robot mobile base
+
  
         #set targets for when a goal is reached: 
         self.goal_reached_error = 0.005
@@ -62,11 +52,8 @@ class LocobotExample(Node):
     def pub_point_P_marker(self):
         #this is very simple because we are just putting the point P in the base_link frame (it is static in this frame)
         marker = Marker()
-        marker.header.frame_id = "locobot/base_link"
-
-        # marker.header.stamp = self.Time.now()
-        marker.header.stamp = self.get_clock().now().to_msg()
-
+        marker.header.frame_id = "locobot_1/base_link"
+        marker.header.stamp = rospy.Time.now()
         marker.id = 0
         marker.type = Marker.SPHERE
         # Set the marker scale
@@ -92,15 +79,12 @@ class LocobotExample(Node):
     def pub_target_point_marker(self):
         #this is putting the marker in the world frame (http://wiki.ros.org/rviz/DisplayTypes/Marker#Points_.28POINTS.3D8.29)
         marker = Marker()
-        marker.header.frame_id = "locobot/odom" #this will be the world frame for the real robot
-
-        # marker.header.stamp = self.Time.now()
-        marker.header.stamp = self.get_clock().now().to_msg()
-
+        marker.header.frame_id = "locobot_1/odom" #this will be the world frame for the real robot
+        marker.header.stamp = rospy.Time.now()
         marker.id = 0
         marker.type = Marker.ARROW
         # Set the marker scale
-        marker.scale.x = 0.3  #arrow length
+        marker.scale.x = 0.3  # arrow length
         marker.scale.y = 0.1 #arrow width
         marker.scale.z = 0.1 #arrow height
 
@@ -181,7 +165,6 @@ class LocobotExample(Node):
         current_angle = axis_angle_mat[1,0] #this is also the angle about the z-axis of the base
         Kp_angle_err = 0.2 #gain for angular error (here a scalar because we are only rotating about the z-axis)
 
-
         '''
         We do not do perform derivative control here because we are doing velocity control, 
         and an input of velocity is feedforward control, not feedback (same derivative order as input is feedforward)
@@ -206,15 +189,11 @@ class LocobotExample(Node):
 
         #find the magnitude of the positional error to determine if its time to focus on orientation or switch targets
         err_magnitude = np.linalg.norm(error_vect)
-
-        #log pos err
-        self.get_logger().info(f'err_x: {err_x}')
    
         #Step 4: Finally, once point B has been reached, then return back to point A and vice versa      
         if err_magnitude < self.goal_reached_error:
             # switch targets so the locobot goes back and forth between points A and B
             # print("reached TARGET! A current target:",self.current_target == 'A')
-            self.get_logger().info('reached TARGET!')
             if self.current_target == 'A':
                 self.current_target = 'B'
             else:
@@ -230,7 +209,7 @@ class LocobotExample(Node):
 
         
 
-    def go_to_pose(self, target_pose=None):
+    def go_to_pose(self,target_pose=None):
         """
         Input: Target_pose - ROS geometry_msgs.msg.Pose type
         To see what it looks like, put the following in the terminal: $ rosmsg show geometry_msgs/Pose
@@ -242,30 +221,28 @@ class LocobotExample(Node):
             target_pose.position.x = 1.0
             target_pose.position.y = 0.0
             #specify the desired pose to be the same orientation as the origin
-            target_pose.orientation.x = 0.0
-            target_pose.orientation.y = 0.0
-            target_pose.orientation.z = 0.0
-            target_pose.orientation.w = 1.0 # cos(theta/2)
+            target_pose.orientation.x = 0
+            target_pose.orientation.y = 0
+            target_pose.orientation.z = 0
+            target_pose.orientation.w = 1 # cos(theta/2)
             self.target_pose = target_pose
         elif type(target_pose) != type(Pose()):
-            self.get_logger().info("Incorrect type for target pose, expects geometry_msgs Pose type") #send error msg if wrong type is send to go_to_pose
+            rospy.logerr("Incorrect type for target pose, expects geometry_msgs Pose type") #send error msg if wrong type is send to go_to_pose
         else:
             self.target_pose = target_pose
 
         #Step 2: Subscribe to pose of the base, and use 'Point P control' (point right in front of the non-holonomic base's line) to move to the position, then orient to the target orinetation once the position is reached
-        # self.create_subscription(Odometry, "/locobot/mobile_base/odom", self.mobile_base_callback, 10) #this says: listen to the odom message, of type odometry, and send that to the callback function specified
-        # rclpy.spin(self)
+
+        rospy.Subscriber("/locobot_1/mobile_base/odom", Odometry, self.mobile_base_callback) #this says: listen to the odom message, of type odometry, and send that to the callback function specified
+        rospy.spin() #This is ros python's way of 'always listening' for the subscriber messages, and when it 
 
 
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = LocobotExample()
-    node.go_to_pose()
-    rclpy.spin(node)
+def main():
+    rospy.init_node('locobot_back_and_forth')
+    cls_obj = LocobotExample() #instantiate object of the class (to call and use the functions)
+    cls_obj.go_to_pose()
 
-    node.destroy_node()
-    rclpy.shutdown()
 
 
 if __name__ == '__main__':

@@ -1,28 +1,27 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.0.2)
 project(me326_locobot_example)
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-# find dependencies
-find_package(ament_cmake REQUIRED)
-install(PROGRAMS
-    scripts/locobot1_example_motion.py
-    scripts/locobot_example_motion.py
-    scripts/locobot_motion_example.py
-    scripts/matching_ptcld.py
-    DESTINATION lib/${PROJECT_NAME}
-)
-install(DIRECTORY launch rviz
-        DESTINATION share/${PROJECT_NAME})
-if(BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
-  set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
-  set(ament_cmake_cpplint_FOUND TRUE)
-  ament_lint_auto_find_test_dependencies()
-endif()
-ament_package()
+
+find_package(catkin_simple REQUIRED)
+
+catkin_python_setup()
+
+catkin_simple()
+
+## Compile as C++11, supported in ROS Kinetic and newer
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+find_package(Eigen3 REQUIRED)
+
+include_directories(include ${EIGEN3_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} ${PCL_LIBRARIES})
+
+
+#C++ implementation of service
+cs_add_executable(matching_ptcld_serv src/matching_ptcld_serv.cpp)
+
+
+
+cs_install()
+
+#cs_install_scripts(scripts/my_script.py) #optional command - https://github.com/catkin/catkin_simple 
+
+cs_export()
