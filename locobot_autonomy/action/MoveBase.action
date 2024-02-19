@@ -1,0 +1,5 @@
+geometry_msgs/Pose target_pose
+---
+bool done
+---
+float64 distance

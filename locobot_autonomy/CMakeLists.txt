@@ -15,8 +15,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
-
-
+find_package(rosidl_default_generators REQUIRED)
+find_package(action_msgs REQUIRED)
 
 add_executable(my_node src/my_node.cpp)
 target_include_directories(my_node PUBLIC
@@ -32,8 +32,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 # Install Python executables
 install(PROGRAMS
-  locobot_autonomy/my_node_py.py
   locobot_autonomy/move_A_to_B_py.py
+  locobot_autonomy/move_locobot_base_action_server.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
@@ -43,6 +43,11 @@ install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "action/MoveBase.action"
+  DEPENDENCIES geometry_msgs std_msgs
+ )
 
 
 if(BUILD_TESTING)
