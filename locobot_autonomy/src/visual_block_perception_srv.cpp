@@ -63,17 +63,19 @@ class Matching_Pix_to_Ptcld : public rclcpp::Node
 public:
   Matching_Pix_to_Ptcld(); //constructor declaration
 
-  
   // Make callback functions for subscribers
-  void info_callback(const sensor_msgs::msg::CameraInfo & msg);
+  // void info_callback(const sensor_msgs::msg::CameraInfo & msg);
+  void info_callback(const std::shared_ptr<sensor_msgs::msg::CameraInfo> msg);
   void depth_callback(const sensor_msgs::msg::Image & msg);
   void color_image_callback(const sensor_msgs::msg::Image & msg);
   void service_callback(const std::shared_ptr<la_msgs::srv::Ptps::Request> req, std::shared_ptr<la_msgs::srv::Ptps::Response> res);
   void camera_cube_locator_marker_gen();
-  
+
 
   private:
   
+  rclcpp::QoS qos_; //message reliability
+
   // Publisher declarations
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_color_filt_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr camera_cube_locator_marker_;
@@ -110,7 +112,7 @@ public:
 
 
 Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld() 
-    : Node("Matching_Pix_to_Ptcld")
+    : Node("Matching_Pix_to_Ptcld"), qos_(2) //qos_(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default))
 {
   
   //Class constructor
@@ -120,12 +122,13 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"in constructor");
 
   // Initialize the topic name parameter with a default value.
-  this->declare_parameter<std::string>("pt_srv_color_img_topic", "/locobot/camera/color/image_raw");
-  this->declare_parameter<std::string>("pt_srv_depth_img_topic", "/locobot/camera/aligned_depth_to_color/image_raw");
-  this->declare_parameter<std::string>("pt_srv_depth_img_cam_info_topic", "/locobot/camera/aligned_depth_to_color/camera_info");
-  this->declare_parameter<std::string>("pt_srv_reg_pt_cld_topic", "/locobot/camera/depth_registered/points");
+  this->declare_parameter<std::string>("pt_srv_color_img_topic", "/locobot/camera_frame_sensor/image_raw");
+  this->declare_parameter<std::string>("pt_srv_depth_img_topic", "/locobot/camera_frame_sensor/depth/image_raw");
+  this->declare_parameter<std::string>("pt_srv_depth_img_cam_info_topic", "/locobot/camera_frame_sensor/camera_info");
+  this->declare_parameter<std::string>("pt_srv_reg_pt_cld_topic", "/locobot/camera_frame_sensor/points");
 
   // Retrieve the topic name from the parameter server.
   std::string color_image_topic_;
@@ -140,23 +143,32 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
   std::string registered_pt_cld_topic_;
   this->get_parameter("pt_srv_reg_pt_cld_topic", registered_pt_cld_topic_);
 
+  //message reliability
+  // qos = rclcpp::QoS(rclcpp::QoSInitialization::from_rmw(rmw_qos_profile_default));
+  //       qos.reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
+
+  qos_.reliability(rclcpp::ReliabilityPolicy::BestEffort);
+
+
   // Create the publisher using the topic name from the parameter server.
-  image_color_filt_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/locobot/camera/block_color_filt_img",1);
+  image_color_filt_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/locobot/camera_frame_sensor/block_color_filt_img",1);
   camera_cube_locator_marker_ = this->create_publisher<visualization_msgs::msg::Marker>("/locobot/camera_cube_locator",1);
 
   // subscription_ = this->create_subscription<std_msgs::msg::String>(
   // "topic", 10, std::bind(&Matching_Pix_to_Ptcld::topic_callback, this, _1));
 
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Camera info topic is: %s",depth_img_camera_info_.c_str());
+
   cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-    depth_img_camera_info_, 1, std::bind(&Matching_Pix_to_Ptcld::info_callback, this, std::placeholders::_1));
+    depth_img_camera_info_, qos_, std::bind(&Matching_Pix_to_Ptcld::info_callback, this, std::placeholders::_1));
 
   
   depth_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-  depth_image_topic_, 1, std::bind(&Matching_Pix_to_Ptcld::depth_callback, this, std::placeholders::_1));
+  depth_image_topic_, qos_, std::bind(&Matching_Pix_to_Ptcld::depth_callback, this, std::placeholders::_1));
   
 
   rgb_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-  color_image_topic_, 1, std::bind(&Matching_Pix_to_Ptcld::color_image_callback, this, std::placeholders::_1));
+  color_image_topic_, qos_, std::bind(&Matching_Pix_to_Ptcld::color_image_callback, this, std::placeholders::_1));
     
   depth_cam_info_ready_ = false; //set this to false so that depth doesn't ask for camera_model_ until its been set
   
@@ -191,15 +203,16 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
 }
 
 
-void Matching_Pix_to_Ptcld::info_callback(const sensor_msgs::msg::CameraInfo &msg){
+void Matching_Pix_to_Ptcld::info_callback(const std::shared_ptr<sensor_msgs::msg::CameraInfo> msg){
   //create a camera model from the camera info
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"in InfoCallback");
   camera_model_.fromCameraInfo(msg);
   depth_cam_info_ready_ = true; 
 }
 
 void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::msg::Image &msg){
   //Take the depth message, using teh 32FC1 encoding and define the depth pointer
-  
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"in Depth callback");
    cv_bridge::CvImageConstPtr cv_ptr;
   try
   {
@@ -264,6 +277,10 @@ void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::msg::Image &msg){
 
 void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image & msg){
   //convert sensor_msgs image to opencv image : http://wiki.ros.org/cv_bridge/Tutorials/UsingCvBridgeToConvertBetweenROSImagesAndOpenCVImages
+
+
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"We are in main image callback");
+
   cv_bridge::CvImagePtr color_img_ptr;
   try
   {
@@ -285,6 +302,7 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image &
   // Now generate and filter to make the mask:
   cv::Mat mask;
   cv::inRange(hsv, lower_bound, upper_bound, mask);
+
 
   // ***NOW THIS CODE BELOW MAKES THE VERY STRONG ASSUMPTION THAT THERE IS ONLY ONE CUBE IN THE FIELD OF VIEW OF THE DESIRED COLOR IN THE MASK - IT AVERAGES THE MASK PIXELS TO FIND THE CENTER 
   cv::Mat mask_img; //this is the result  //Apply the mask; black region in the mask is 0, so when multiplied with original image removes all non-selected color
@@ -341,10 +359,14 @@ void Matching_Pix_to_Ptcld::service_callback(const std::shared_ptr<la_msgs::srv:
 
 
 
-int main(int argc, char * argv[])
+// int main(int argc, char * argv[])
+int main(int argc, char **argv)
 {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Matching_Pix_to_Ptcld>());
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"basic node start");
+  auto node = std::make_shared<Matching_Pix_to_Ptcld>();
+  rclcpp::spin(node);
+  // rclcpp::spin(std::make_shared<Matching_Pix_to_Ptcld>());
   rclcpp::shutdown();
   return 0;
 }
