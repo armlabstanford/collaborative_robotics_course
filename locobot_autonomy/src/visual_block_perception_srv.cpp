@@ -155,8 +155,8 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
   depth_image_topic_, 1, std::bind(&Matching_Pix_to_Ptcld::depth_callback, this, std::placeholders::_1));
   
 
-  // rgb_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
-  // color_image_topic_, 1, std::bind(&Matching_Pix_to_Ptcld::color_image_callback, this, std::placeholders::_1));
+  rgb_image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+  color_image_topic_, 1, std::bind(&Matching_Pix_to_Ptcld::color_image_callback, this, std::placeholders::_1));
     
   depth_cam_info_ready_ = false; //set this to false so that depth doesn't ask for camera_model_ until its been set
   
@@ -166,13 +166,13 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
   
 }
 
-/*
+
 void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
-  visualization_msgs::Marker marker;
+  visualization_msgs::msg::Marker marker;
   marker.header.frame_id = point_3d_cloud_.header.frame_id;
-  marker.header.stamp = ros::Time::now();
+  marker.header.stamp = this->get_clock()->now();
   marker.id = 0;
-  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.type = visualization_msgs::msg::Marker::SPHERE;
   // Set the marker scale
   marker.scale.x = 0.05;  //radius of the sphere
   marker.scale.y = 0.05;
@@ -187,9 +187,9 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
   marker.color.g = 0.0;
   marker.color.b = 0.0;
   // Publish the marker
-  camera_cube_locator_marker_.publish(marker);
+  camera_cube_locator_marker_->publish(marker);
 }
-*/
+
 
 void Matching_Pix_to_Ptcld::info_callback(const sensor_msgs::msg::CameraInfo &msg){
   //create a camera model from the camera info
@@ -261,8 +261,8 @@ void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::msg::Image &msg){
 
 }
 
-/*
-void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::Image::ConstPtr& msg){
+
+void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image & msg){
   //convert sensor_msgs image to opencv image : http://wiki.ros.org/cv_bridge/Tutorials/UsingCvBridgeToConvertBetweenROSImagesAndOpenCVImages
   cv_bridge::CvImagePtr color_img_ptr;
   try
@@ -271,7 +271,7 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::Image::Const
   }
   catch (cv_bridge::Exception& e)
   {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
+    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),"cv_bridge exception: %s", e.what());
     return;
   }
   //Convert opencv color imgage to HSV:
@@ -319,17 +319,17 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::Image::Const
   
   //Publish the image (color img with mask applied)
   cv_bridge::CvImage cv_bridge_mask_image;
-  cv_bridge_mask_image.header.stamp = ros::Time::now();
-  cv_bridge_mask_image.header.frame_id = msg->header.frame_id;
-  cv_bridge_mask_image.encoding = sensor_msgs::image_encodings::RGB8;//::MONO8;
+  cv_bridge_mask_image.header.stamp = this->get_clock()->now(); //ros::Time::now();
+  cv_bridge_mask_image.header.frame_id = msg.header.frame_id;
+  cv_bridge_mask_image.encoding = sensor_msgs::image_encodings::RGB8; //::MONO8;
   cv_bridge_mask_image.image = mask_img;
-  sensor_msgs::Image ros_mask_image; //now convert from cv::Mat image back to ROS sensor_msgs image
+  sensor_msgs::msg::Image ros_mask_image; //now convert from cv::Mat image back to ROS sensor_msgs image
   cv_bridge_mask_image.toImageMsg(ros_mask_image);
-  image_color_filt_pub_.publish(ros_mask_image);
+  image_color_filt_pub_->publish(ros_mask_image);
   //Now show the cube location spherical marker: 
   Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen();
 }
-*/
+
 
   
 
