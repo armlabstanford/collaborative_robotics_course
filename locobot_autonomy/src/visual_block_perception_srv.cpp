@@ -278,9 +278,6 @@ void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::msg::Image &msg){
 void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image & msg){
   //convert sensor_msgs image to opencv image : http://wiki.ros.org/cv_bridge/Tutorials/UsingCvBridgeToConvertBetweenROSImagesAndOpenCVImages
 
-
-  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"We are in main image callback");
-
   cv_bridge::CvImagePtr color_img_ptr;
   try
   {
@@ -353,7 +350,9 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image &
 
 void Matching_Pix_to_Ptcld::service_callback(const std::shared_ptr<la_msgs::srv::Ptps::Request> req, std::shared_ptr<la_msgs::srv::Ptps::Response> res){
   // the topic for the rgb_img should be set as a rosparam when the file is launched (this can be done in the launch file, it is not done here since the subscriber is started with the class object instantiation)
-  res->ptcloud_point = point_3d_cloud_; //send the point back as a response  
+  
+  res->red_present = true;
+  res->red_points.push_back(point_3d_cloud_); //send the point back as a response  
   // return res;
 }
 

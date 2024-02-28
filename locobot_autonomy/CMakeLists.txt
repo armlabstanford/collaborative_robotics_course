@@ -86,7 +86,6 @@ install(DIRECTORY
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/MoveBase.action"
-  "srv/PixtoPoint.srv"
   DEPENDENCIES geometry_msgs std_msgs
  )
 
