@@ -1,4 +1,8 @@
-
+/*
+Written by: Monroe Kennedy, March 2024
+This node is a service that takes in a color image and depth image, and returns the 3D points of the center of the blocks of each color present in the image.
+To call this service, use the following command from terminal: $ ros2 service call /pix_to_point_cpp la_msgs/srv/Ptps "{}"  
+*/
 
 #include "rclcpp/rclcpp.hpp"
 #include <cstdio>
@@ -45,7 +49,6 @@
 
 #include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
-// #include <sensor_msgs/msg/image_encodings.hpp>
 #include "sensor_msgs/image_encodings.hpp"
 
 #include <geometry_msgs/msg/point_stamped.hpp>
@@ -75,15 +78,9 @@ public:
   void service_callback(const std::shared_ptr<la_msgs::srv::Ptps::Request> req, std::shared_ptr<la_msgs::srv::Ptps::Response> res);
   void camera_cube_locator_marker_gen();
   bool blocks_of_specific_color_present(const std::shared_ptr<cv::Mat>);
-  // void blob_locator(std::shared_ptr<cv::Mat> & color_image_canvas_ptr, 
-  //                   std::shared_ptr<std::vector<geometry_msgs::msg::Point>> & uv_pix_list_ptr,  
-  //                   std::shared_ptr<cv::Mat> & mask_ptr);
+
   std::vector<geometry_msgs::msg::Point> blob_locator(std::shared_ptr<cv::Mat> & color_image_canvas_ptr,  
                                                       std::shared_ptr<cv::Mat> & mask_ptr);
-  // void register_rgb_pix_to_depth_pts(const cv_bridge::CvImageConstPtr cv_ptr, 
-  //                                   std_msgs::msg::Header msg_header,
-  //                                   const std::shared_ptr<std::vector<geometry_msgs::msg::Point>> & uv_pix_list_ptr, 
-  //                                   std::shared_ptr<std::vector<geometry_msgs::msg::PointStamped>> & general_3d_cloud_ptr);
 
 std::vector<geometry_msgs::msg::PointStamped> register_rgb_pix_to_depth_pts(const cv_bridge::CvImageConstPtr cv_ptr,
                                                                           std_msgs::msg::Header msg_header, 
@@ -142,9 +139,8 @@ std::vector<geometry_msgs::msg::PointStamped> register_rgb_pix_to_depth_pts(cons
   
   // TF Listener
   std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;//{nullptr};
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-  // bool service_filled_ = true; //variable to allow service to request services pause before deleting content to ensure its 
 
 };
 
@@ -160,8 +156,6 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"in constructor");
 
   // Initialize the topic name parameter with a default value.
   this->declare_parameter<std::string>("pt_srv_color_img_topic", "/locobot/camera_frame_sensor/image_raw");
@@ -190,11 +184,6 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
   image_color_filt_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/locobot/camera_frame_sensor/block_color_filt_img",1);
   camera_cube_locator_marker_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/locobot/camera_cube_locator",1);
 
-  // subscription_ = this->create_subscription<std_msgs::msg::String>(
-  // "topic", 10, std::bind(&Matching_Pix_to_Ptcld::topic_callback, this, _1));
-
-  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"Camera info topic is: %s",depth_img_camera_info_.c_str());
-
   cam_info_sub_ = this->create_subscription<sensor_msgs::msg::CameraInfo>(
     depth_img_camera_info_, qos_, std::bind(&Matching_Pix_to_Ptcld::info_callback, this, std::placeholders::_1));
 
@@ -208,7 +197,6 @@ Matching_Pix_to_Ptcld::Matching_Pix_to_Ptcld()
     
   depth_cam_info_ready_ = false; //set this to false so that depth doesn't ask for camera_model_ until its been set
   
-  //IS THIS CORRECT?? - DOUBLE check
   service_ = this->create_service<la_msgs::srv::Ptps>(
   "pix_to_point_cpp", std::bind(&Matching_Pix_to_Ptcld::service_callback, this, std::placeholders::_1, std::placeholders::_2));
   
@@ -222,13 +210,15 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
 
   visualization_msgs::msg::MarkerArray marker_array;
 
+  int marker_id_counter = 0;
 
   if(red_blocks_present_){
     for (const auto& block_pt_3D : red_3d_cloud_){
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = point_3d_cloud_.header.frame_id;
+      marker.header.frame_id = block_pt_3D.header.frame_id;
       marker.header.stamp = this->get_clock()->now();
-      marker.id = 0;
+      marker.id = marker_id_counter;
+      marker_id_counter++;
       marker.type = visualization_msgs::msg::Marker::SPHERE;
       // Set the marker scale
       marker.scale.x = 0.05;  //radius of the sphere
@@ -251,9 +241,10 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
   if(blue_blocks_present_){
     for (const auto& block_pt_3D : blue_3d_cloud_){
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = point_3d_cloud_.header.frame_id;
+      marker.header.frame_id = block_pt_3D.header.frame_id;
       marker.header.stamp = this->get_clock()->now();
-      marker.id = 0;
+      marker.id = marker_id_counter;
+      marker_id_counter++;
       marker.type = visualization_msgs::msg::Marker::SPHERE;
       // Set the marker scale
       marker.scale.x = 0.05;  //radius of the sphere
@@ -276,9 +267,10 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
   if(green_blocks_present_){
     for (const auto& block_pt_3D : green_3d_cloud_){
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = point_3d_cloud_.header.frame_id;
+      marker.header.frame_id = block_pt_3D.header.frame_id;
       marker.header.stamp = this->get_clock()->now();
-      marker.id = 0;
+      marker.id = marker_id_counter;
+      marker_id_counter++;
       marker.type = visualization_msgs::msg::Marker::SPHERE;
       // Set the marker scale
       marker.scale.x = 0.05;  //radius of the sphere
@@ -302,9 +294,10 @@ void Matching_Pix_to_Ptcld::camera_cube_locator_marker_gen(){
   if(yellow_blocks_present_){
     for (const auto& block_pt_3D : yellow_3d_cloud_){
       visualization_msgs::msg::Marker marker;
-      marker.header.frame_id = point_3d_cloud_.header.frame_id;
+      marker.header.frame_id = block_pt_3D.header.frame_id;
       marker.header.stamp = this->get_clock()->now();
-      marker.id = 0;
+      marker.id = marker_id_counter;
+      marker_id_counter++;
       marker.type = visualization_msgs::msg::Marker::SPHERE;
       // Set the marker scale
       marker.scale.x = 0.05;  //radius of the sphere
@@ -433,11 +426,8 @@ void Matching_Pix_to_Ptcld::depth_callback(const sensor_msgs::msg::Image &msg){
 
   // if blocks of a given color are present, then find the corresponding depth points correlated to their center pixels
   if(red_blocks_present_){
-  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"red blocks present");
   std::shared_ptr<std::vector<geometry_msgs::msg::Point>> red_uv_pix_list_ptr = std::make_shared<std::vector<geometry_msgs::msg::Point>>(red_uv_pix_list_);
-  // std::shared_ptr<std::vector<geometry_msgs::msg::PointStamped>> red_3d_cloud_ptr = std::make_shared<std::vector<geometry_msgs::msg::PointStamped>>(red_3d_cloud_);
   red_3d_cloud_ = Matching_Pix_to_Ptcld::register_rgb_pix_to_depth_pts(cv_ptr, msg_header, red_uv_pix_list_ptr);  
-  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"red blocks present length of red_3d_cloud_ is: %d",red_3d_cloud_.size());
   }
 
   if(blue_blocks_present_){
@@ -494,14 +484,10 @@ std::vector<geometry_msgs::msg::Point> Matching_Pix_to_Ptcld::blob_locator(std::
       if (moments.m00 != 0) {
           // Calculate the centroid of the blob
           cv::Point2f center(moments.m10 / moments.m00, moments.m01 / moments.m00);
-          // blobCenters.push_back(center);
           geometry_msgs::msg::Point center_geom;
           center_geom.x = center.x;
           center_geom.y = center.y;
           uv_pix_list.push_back(center_geom);
-          // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"TEST: center x: %f, center y: %f",center.x,center.y);
-          // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"TEST2: length of uv_pix_list_ is: %d",uv_pix_list.size());
-    
           // Draw the center for visualization
           cv::circle(*color_image_canvas_ptr, center, 4, cv::Scalar(0, 255, 0), -1);
       }
@@ -593,28 +579,21 @@ void Matching_Pix_to_Ptcld::color_image_callback(const sensor_msgs::msg::Image &
   // If blocks exist of each color, then find the blob centers of those blocks and populate their respective lists
   if(red_blocks_present_){
     //Find the countour and blob centers
-    // std::shared_ptr<std::vector<geometry_msgs::msg::Point>> red_uv_pix_list_ptr = std::make_shared<std::vector<geometry_msgs::msg::Point>>(red_uv_pix_list_);
     red_uv_pix_list_ = Matching_Pix_to_Ptcld::blob_locator(color_image_canvas_ptr, red_mask_ptr); //pass in the canvas image pointer and the list of pixel (uv) points to be populated  
-    // RCLCPP_INFO(rclcpp::get_logger("rclcpp"),"red blocks present length of red_uv_pix_list_ is: %d",red_uv_pix_list_.size());
   }
-
-
 
   if(blue_blocks_present_){
     //Find the countour and blob centers
-    // std::shared_ptr<std::vector<geometry_msgs::msg::Point>> blue_uv_pix_list_ptr = std::make_shared<std::vector<geometry_msgs::msg::Point>>(blue_uv_pix_list_);
     blue_uv_pix_list_ = Matching_Pix_to_Ptcld::blob_locator(color_image_canvas_ptr, blue_mask_ptr); //pass in the canvas image pointer and the list of pixel (uv) points to be populated  
   }
 
   if(green_blocks_present_){
     //Find the countour and blob centers
-    // std::shared_ptr<std::vector<geometry_msgs::msg::Point>> green_uv_pix_list_ptr = std::make_shared<std::vector<geometry_msgs::msg::Point>>(green_uv_pix_list_);
     green_uv_pix_list_ = Matching_Pix_to_Ptcld::blob_locator(color_image_canvas_ptr, green_mask_ptr); //pass in the canvas image pointer and the list of pixel (uv) points to be populated  
   }
 
   if(yellow_blocks_present_){
     //Find the countour and blob centers
-    // std::shared_ptr<std::vector<geometry_msgs::msg::Point>> yellow_uv_pix_list_ptr = std::make_shared<std::vector<geometry_msgs::msg::Point>>(yellow_uv_pix_list_);
     yellow_uv_pix_list_ = Matching_Pix_to_Ptcld::blob_locator(color_image_canvas_ptr, yellow_mask_ptr); //pass in the canvas image pointer and the list of pixel (uv) points to be populated  
   }
   
