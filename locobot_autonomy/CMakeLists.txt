@@ -43,20 +43,8 @@ find_package(Eigen3 REQUIRED)
 find_package(la_msgs REQUIRED)
 
 
-add_executable(my_node src/my_node.cpp)
-target_include_directories(my_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-target_compile_features(my_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-
-install(TARGETS my_node
-  DESTINATION lib/${PROJECT_NAME})
-
-
-
 add_executable(visual_block_perception_srv src/visual_block_perception_srv.cpp)
 ament_target_dependencies(visual_block_perception_srv rclcpp Eigen geometry_msgs tf2_eigen tf2_ros tf2 tf2_geometry_msgs OpenCV image_transport cv_bridge image_geometry visualization_msgs std_msgs la_msgs)
-
 
 
 install(TARGETS 

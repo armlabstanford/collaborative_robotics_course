@@ -1,3 +1,4 @@
+string desired_frame
 ---
 bool red_present
 bool blue_present
