@@ -1,5 +1,7 @@
 geometry_msgs/Pose target_pose
+bool control_base_angle_bool
 ---
 bool done
 ---
 float64 distance
+float64 angular_distance
